@@ -894,69 +894,6 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    .home-screen {
-      width: min(560px, 100%);
-      display: grid;
-      gap: 16px;
-      justify-items: center;
-      padding: 28px;
-      border: 4px solid transparent;
-      border-radius: 24px;
-      background:
-        linear-gradient(180deg, rgba(48, 8, 96, .92), rgba(18, 0, 47, .96)) padding-box,
-        linear-gradient(180deg, #fff6a8, #c9851e, #fff07a) border-box;
-      box-shadow: 0 24px 70px rgba(0,0,0,.48);
-    }
-
-    .home-title {
-      margin: 0 0 4px;
-      color: var(--yellow);
-      font-size: 30px;
-      line-height: 1;
-      font-weight: 900;
-      text-transform: uppercase;
-      text-shadow: 0 2px rgba(0,0,0,.34);
-    }
-
-    .home-actions {
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .profile-select-btn {
-      height: 58px;
-      border: 0;
-      border-radius: 8px;
-      background: linear-gradient(180deg, #16b8ff, #0085d4);
-      color: #fff;
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: .5px;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-shadow: inset 0 4px rgba(255,255,255,.14), inset 0 -4px rgba(0,0,0,.2), 0 4px 0 rgba(0,0,0,.2);
-    }
-
-    .profile-select-btn.secondary {
-      background: linear-gradient(180deg, #6e0ec6, #4c008f);
-    }
-
-    .profile-select-btn:hover { filter: brightness(1.08); }
-
-    body.profile-hidden .game-modal {
-      display: none;
-    }
-
-    body.profile-open .home-screen {
-      display: none;
-    }
-
-    body.profile2-open .home-screen {
-      display: none;
-    }
-
     body.profile2-open .game-modal {
       display: none;
     }
@@ -1006,7 +943,6 @@
 
     @media (max-width: 760px) {
       body { padding: 12px; }
-      .home-actions { grid-template-columns: 1fr; }
       .profile2-modal { padding: 14px; }
       .profile2-shell {
         width: min(1060px, 100%);
@@ -1062,19 +998,11 @@
     }
   </style>
 </head>
-<body class="profile-hidden">
+<body class="profile-open">
   <div class="wallet-hud" data-wallet aria-label="Saldo da carteira" aria-live="polite">
     <span class="coin"><img src="assets/images/reward coin image.png" alt="" /></span>
     <span class="wallet-balance" data-balance>600</span>
   </div>
-
-  <section class="home-screen" aria-label="Seleção de perfil">
-    <h1 class="home-title">Escolha o perfil</h1>
-    <div class="home-actions">
-      <button class="profile-select-btn" data-open-profile="1">Profile 1</button>
-      <button class="profile-select-btn secondary" data-open-profile="2">Profile 2</button>
-    </div>
-  </section>
 
   <main class="game-modal" aria-label="Perfil do usuário">
     <div class="title-pill">PERFIL</div>
@@ -1484,6 +1412,9 @@
     };
 
     window.profile2Confirm = function({ blockType, fields, otpType, otpTarget }) {
+      if (blockType === 'phone' && otpType) {
+        return window.profile2Otp({ type: otpType, target: otpTarget });
+      }
       return new Promise(resolve => {
         profile2OverlayBridge = { type: 'confirm', resolve, otpType, otpTarget };
         confirmList.innerHTML = '';
@@ -1852,6 +1783,11 @@
       block.querySelector('[data-save]').addEventListener('click', () => {
         if (!validateBlock(block)) return;
         state.currentBlock = block;
+        if (block.dataset.block === 'phone') {
+          setupOtp(block);
+          openOverlay(otpOverlay);
+          return;
+        }
         buildConfirm(block);
         openOverlay(confirmOverlay);
       });
@@ -1887,28 +1823,13 @@
       updateProgress(block);
     });
 
-    document.querySelector('[data-open-profile="1"]').addEventListener('click', () => {
-      document.body.classList.remove('profile-hidden');
-      document.body.classList.remove('profile2-open');
-      document.body.classList.add('profile-open');
-    });
-
-    document.querySelector('[data-open-profile="2"]').addEventListener('click', () => {
-      document.body.classList.remove('profile-hidden');
-      document.body.classList.remove('profile-open');
-      document.body.classList.add('profile2-open');
-      document.querySelector('[data-profile2-modal]').setAttribute('aria-hidden', 'false');
-    });
-
     document.querySelector('[data-close-profile2]').addEventListener('click', () => {
       document.body.classList.remove('profile2-open');
-      document.body.classList.add('profile-hidden');
+      document.body.classList.add('profile-open');
       document.querySelector('[data-profile2-modal]').setAttribute('aria-hidden', 'true');
     });
 
     document.querySelector('[data-close-profile]').addEventListener('click', () => {
-      document.body.classList.remove('profile-open');
-      document.body.classList.add('profile-hidden');
       showToast('Perfil fechado.');
     });
 
